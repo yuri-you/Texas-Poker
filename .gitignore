@@ -1,5 +1,5 @@
-generate
-poker
-build-texas-Desktop_Qt_5_15_2_MinGW_32_bit-Debug
-build-texas-Desktop_Qt_5_15_2_MinGW_32_bit-Release
+/generate
+/poker
+/build-texas-Desktop_Qt_5_15_2_MinGW_32_bit-Debug
+/build-texas-Desktop_Qt_5_15_2_MinGW_32_bit-Release
 *.zip
