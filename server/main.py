@@ -35,7 +35,6 @@ def main():
     information["起始金额"]=2000
     information["起始底注"]=10
     count=0
-    print(1)
     for user in Players:
             Players[user]["information"]=dict()
             Players[user]["information"]["money"]=information["起始金额"]
@@ -52,7 +51,6 @@ def main():
             new_thread=AudienceThread(user,Audience,information)
             Audience[user]["Thread"]=new_thread
             new_thread.daemon=True
-    print(len(Players))
     for user in Players:
         print("Start:"+user)
         Players[user]["Thread"].start()
@@ -68,16 +66,10 @@ def main():
         for player in Players:
             Players[player]["information"]["position"]=(Players[player]["information"]["id"]+iterations)%len(Players)
             for key in Players:
-                while not Players[player]["information"]["Write"]:
-                    a=1
-                Players[player]["TcpSocket"].send(bytes('Initial State,%s,%d,%d'%(key,Players[key]["information"]["id"],(Players[key]["information"]["id"]+iterations)%len(Players)),'utf-8'))
-                Players[player]["information"]["Write"]=False
-            while not Players[player]["information"]["Write"]:
-                a=1
-            # print("Finish")
-            Players[player]["TcpSocket"].send(bytes("Initial State Finish",'utf-8'))
-            Players[player]["information"]["Write"]=False
-        a=input()
+                write(Players[player]["TcpSocket"],'Initial State,%s,%d,%d'%(key,Players[key]["information"]["id"],(Players[key]["information"]["id"]+iterations)%len(Players)))
+            write(Players[player]["TcpSocket"],"Initial State Finish")
+        while True:
+            pass
 
 
 if __name__=="__main__":

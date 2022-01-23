@@ -46,7 +46,8 @@ private:
     //tcps
     void write_buffer(QString x);
     void closeEvent(QCloseEvent *e);
-    void readAll();
+    void read();
+    void readAll(QString data);
     void tcp_connect();
     void tcp_disconnect();
     void initial_tcp();
@@ -56,6 +57,7 @@ private:
     void cancel_ready();
     void change_name();
     void change_host();
+
     //layouts
     void initial();
     void initial_cards();
@@ -64,5 +66,9 @@ private:
     //game
     void Receive_Game_Instruction(QStringList x);
     void Show_State();
+    void Begin_Game();
+    void Open_Communication();
+    void Send_Message();
+    void Clear_Message();
 };
 #endif // MAINWINDOW_H

@@ -11,7 +11,6 @@ class PlayerThread(Thread):
         self.Addr=users_list[name]["Addr"]
         self.tcpCliSock.send(bytes('Change Money,%d'%self.users_list[self.name]["information"]["money"],'utf-8'))
         self.users_list[self.name]["information"]["Start"]=True
-        self.users_list[self.name]["information"]["Write"]=True
     def run(self):
         # self.tcpCliSock.send(bytes('Game Start,Player','utf-8'))
         while True:
@@ -21,8 +20,8 @@ class PlayerThread(Thread):
             if not receive:
                 #断线了
                 break
-            if receive=="Accepted":
-                self.users_list[self.name]["information"]["Write"]=True
+            # if receive=="Accepted":
+            #     self.users_list[self.name]["information"]["Write"]=True
             if receive=="Receive Game Start":
                 pass
             datas=receive.split(",")

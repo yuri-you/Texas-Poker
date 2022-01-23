@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include<iostream>
+//#include<iostream>
+
+#define Play_Minimal_Size 1
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -11,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 void MainWindow::initial_tcp(){
     socket=new QTcpSocket();
-    connect(socket,&QTcpSocket::readyRead,this,&MainWindow::readAll);
+    connect(socket,&QTcpSocket::readyRead,this,&MainWindow::read);
     tcpisconnect=false;
 
     //ip and porter
@@ -21,7 +23,7 @@ void MainWindow::initial_tcp(){
     ui->port->setText(QString("11000"));
 
     //editline
-    QRegExp regExp("[^,]+");//避免与分隔符','冲突
+    QRegExp regExp("[^,.]+");//避免与分隔符','冲突
     ui->name->setValidator(new QRegExpValidator(regExp,this));
     ui->name->setMaxLength(10);
 
@@ -71,12 +73,14 @@ void MainWindow::ready(){
         }
         write_buffer("Begin Game");
     }
+    ui->name->setEnabled(false);
 }
 void MainWindow::cancel_ready(){
     if(players[ui->name->text()]==0)return;
     write_buffer("Cancel Ready,"+ui->name->text());
     players[ui->name->text()]=0;
     modify_user();
+    ui->name->setEnabled(true);
 }
 void MainWindow::write_buffer_debug(){
     if(!tcpisconnect){
@@ -90,7 +94,7 @@ void MainWindow::write_buffer(QString x){
         QMessageBox::warning(this,"WARNING!","请先加入房间",QMessageBox::Yes);
         return;
     }
-
+    x+=".";
     socket->write(x.toUtf8());
 }
 void MainWindow::tcp_connect(){
@@ -161,9 +165,16 @@ void MainWindow::change_host(){
     ui->zhunbei->setEnabled(false);
     modify_user();
 }
-void MainWindow::readAll(){
+void MainWindow::read(){
     QByteArray buffer=socket->readAll();
     QString data = decoder->toUnicode(buffer);
+    qDebug()<<"Get Information:"+data;
+    QStringList datas=data.split('.');
+    for(QString t:datas){
+        readAll(t);
+    }
+}
+void MainWindow::readAll(QString data){
     QStringList datas=data.split(',');
     qDebug()<<data;
     if(datas[0]=="Connect Successfully"){
@@ -206,7 +217,9 @@ void MainWindow::readAll(){
             QMessageBox::warning(this,"WARNING!","出错",QMessageBox::Yes);
             exit(-1);
         }
+        if(players.size()>=Play_Minimal_Size){
         ui->zhunbei->setEnabled(true);
+        }
     }
     else if(datas[0]=="Not All Ready"){
         if(players[selfname]!=2){
@@ -230,6 +243,7 @@ void MainWindow::readAll(){
         modify_user();
     }
     else Receive_Game_Instruction(datas);
+//    write_buffer("Accept");
 }
 void MainWindow::closeEvent(QCloseEvent *e){
     socket->disconnectFromHost();
@@ -240,6 +254,10 @@ void MainWindow::initial(){
     initial_cards();
     initial_lineedit();
     ui->xiazhujine->setSingleStep(10);
+    ui->fasongxiaoxi->setEnabled(false);
+    ui->shoujianren->setEnabled(false);
+    ui->fasongneirong->setEnabled(false);
+    ui->qingkongxiaoxi->setEnabled(false);
 }
 void MainWindow::initial_cards(){
     ui->own_card1->setPixmap(QPixmap("poker//behind.jpg"));
@@ -249,7 +267,6 @@ void MainWindow::initial_cards(){
     ui->card3->setPixmap(QPixmap("poker//behind.jpg"));
     ui->card4->setPixmap(QPixmap("poker//behind.jpg"));
     ui->card5->setPixmap(QPixmap("poker//behind.jpg"));
-
 }
 void MainWindow::initial_lineedit(){
     //disable lineedit data
