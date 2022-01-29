@@ -1,6 +1,9 @@
 from host_start import *
 from game import *
+from cards import *
 import time
+import random
+
 def main():
     users_list=dict()
     Threads=[]
@@ -31,16 +34,16 @@ def main():
             break
     # print(t.is_alive())
     # print(mainThread[0].is_alive())
-    information=dict()
-    information["起始金额"]=2000
-    information["起始底注"]=10
+    Information=dict()
+    Information["起始金额"]=2000
+    Information["起始底注"]=10
     count=0
     for user in Players:
             Players[user]["information"]=dict()
-            Players[user]["information"]["money"]=information["起始金额"]
+            Players[user]["information"]["money"]=Information["起始金额"]
             Players[user]["information"]["Start"]=False
             Players[user]["information"]["id"]=count
-            new_thread=PlayerThread(user,Players,information)
+            new_thread=PlayerThread(user,Players,Information)
             Players[user]["Thread"]=new_thread
             new_thread.daemon=True
             count+=1
@@ -48,12 +51,13 @@ def main():
             # users_list[user]["information"]["action"]=False
             # users_list[user]["information"]["action content"]=str()
     for user in Audience:
-            new_thread=AudienceThread(user,Audience,information)
+            new_thread=AudienceThread(user,Audience,Information)
             Audience[user]["Thread"]=new_thread
             new_thread.daemon=True
     for user in Players:
         print("Start:"+user)
         Players[user]["Thread"].start()
+    #initialize game
     while True:
         is_start=True
         while is_start:
@@ -62,15 +66,67 @@ def main():
                 if not Players[player]["information"]["Start"]:
                     is_start=True
                     break
-        iterations=0
-        for player in Players:
-            Players[player]["information"]["position"]=(Players[player]["information"]["id"]+iterations)%len(Players)
-            for key in Players:
-                write(Players[player]["TcpSocket"],'Initial State,%s,%d,%d'%(key,Players[key]["information"]["id"],(Players[key]["information"]["id"]+iterations)%len(Players)))
-            write(Players[player]["TcpSocket"],"Initial State Finish")
+        start_game(Players)
+        # iterations=0
+        #each game
+        Information["iteration"]=0
+        Information["alive_player"]=len(Players)
         while True:
-            pass
+            begin_iteration(Players,Information)
+            cards=establish_cards()
+            allocate_cards(cards,Players)
+            Information["Ready"]=True
+            Information["game_time"]=0 #现在进行到了第几轮，比如0是翻前。1是flop,2是
+            Information["now_player"]=2
+            Information["begin_bet"]=False
+            # Information["max_bet"]=0
+            Information["not_fold"]=Information["alive_player"]
+            while True:
+                if Information["not_fold"]==1 or Information["game_time"]==4:
+                    break   #全部弃牌或者开牌
+                if Information["game_time"]==0:#翻前
+                    if Information["now_player"]==2:#轮到枪口位
+                        if Information["begin_bet"]:#都加过注
+                            continue_allocate=True
+                            Bet_Money=[]
+                            for player in Players:
+                                if Players[player]["information"]["alive"] and not Players[player]["information"]["fold"]:
+                                    Bet_Money.append(Players[player]["information"]["add_money"])
+                            if len(set(Bet_Money))==1:#进到下一轮 
+                                enter_next_iteration(Players,Information,cards)
+                                #自动开牌bug
+                                #盲注问题
+                                #有人升注但自己不能再加
+                                
+                                continue
+                        else:
+                            Information["begin_bet"]=True
+                elif Information["game_time"]>0:#翻牌后
+                    if Information["now_player"]==0:#轮到小盲
+                        if Information["begin_bet"]:#都加过注
+                            continue_allocate=True
+                            for player in Players:
+                                if Players[player]["information"]["alive"] and not Players[player]["information"]["fold"]:
+                                    if Players[player]["information"]["add_money"]!=Information["max_bet"]:
+                                        continue_allocate=False
+                                        break
+                            if continue_allocate: 
+                                enter_next_iteration(Players,Information,cards)
+                                continue
+                        else:
+                            Information["begin_bet"]=True
+                if activate(Players,Information):
+                    while not check_ready(Players,Information):
+                        pass
+                Information["now_player"]=(Information["now_player"]+1)%len(Players)
+                # while True:
+                #     pass
+            # activate(user)
+            # now_player=
+            # print(cards)
 
 
 if __name__=="__main__":
+    random.seed(int(time.time()))
     main()
+ 

@@ -36,7 +36,7 @@ void MainWindow::initial_tcp(){
 
     //connect tcp
     connect(ui->jiarufangjian,&QPushButton::clicked,this,&MainWindow::tcp_connect);
-    connect(ui->tuichufangjia,&QPushButton::clicked,this,&MainWindow::tcp_disconnect);
+    connect(ui->tuichufangjian,&QPushButton::clicked,this,&MainWindow::tcp_disconnect);
 
     //ready
     connect(ui->zhunbei,&QPushButton::clicked,this,&MainWindow::ready);
@@ -64,6 +64,8 @@ void MainWindow::ready(){
         if(players[ui->name->text()]==1)return;
         write_buffer("Ready,"+ui->name->text());
         players[ui->name->text()]=1;
+        ui->zhunbei->setEnabled(false);
+        ui->quxiaozhunbei->setEnabled(true);
         modify_user();
     }
     else{//房主
@@ -81,6 +83,8 @@ void MainWindow::cancel_ready(){
     players[ui->name->text()]=0;
     modify_user();
     ui->name->setEnabled(true);
+    ui->zhunbei->setEnabled(true);
+    ui->quxiaozhunbei->setEnabled(false);
 }
 void MainWindow::write_buffer_debug(){
     if(!tcpisconnect){
@@ -108,6 +112,9 @@ void MainWindow::tcp_connect(){
         socket->disconnectFromHost();
     }
     socket->connectToHost(ip,port);
+    ui->tuichufangjian->setEnabled(true);
+    ui->jiarufangjian->setEnabled(false);
+    ui->zhunbei->setEnabled(true);
 }
 void MainWindow::tcp_disconnect(){
     if(socket->isValid()){
@@ -170,13 +177,13 @@ void MainWindow::read(){
     QString data = decoder->toUnicode(buffer);
     qDebug()<<"Get Information:"+data;
     QStringList datas=data.split('.');
-    for(QString t:datas){
-        readAll(t);
+    for(int i=0;i<datas.length()-1;++i){
+        readAll(datas[i]);
     }
 }
 void MainWindow::readAll(QString data){
-    QStringList datas=data.split(',');
     qDebug()<<data;
+    QStringList datas=data.split(',');
     if(datas[0]=="Connect Successfully"){
         tcpisconnect=true;
         QMessageBox::information(this,"Information!","成功加入房间",QMessageBox::Yes);
@@ -229,7 +236,6 @@ void MainWindow::readAll(QString data){
         ui->zhunbei->setEnabled(false);
     }
     else if(datas[0]=="Initial Player"){
-//        modify_user();
         players[datas[1]]=datas[2].toInt();
     }
     else if(datas[0]=="Initial Finish"){
@@ -243,7 +249,6 @@ void MainWindow::readAll(QString data){
         modify_user();
     }
     else Receive_Game_Instruction(datas);
-//    write_buffer("Accept");
 }
 void MainWindow::closeEvent(QCloseEvent *e){
     socket->disconnectFromHost();
@@ -253,11 +258,15 @@ void MainWindow::initial(){
     players.clear();
     initial_cards();
     initial_lineedit();
-    ui->xiazhujine->setSingleStep(10);
     ui->fasongxiaoxi->setEnabled(false);
     ui->shoujianren->setEnabled(false);
     ui->fasongneirong->setEnabled(false);
     ui->qingkongxiaoxi->setEnabled(false);
+    ui->zhunbei->setEnabled(false);
+    ui->quxiaozhunbei->setEnabled(false);
+    ui->tuichufangjian->setEnabled(false);
+    ui->jiarufangjian->setEnabled(true);
+    Enable_Bet(false);
 }
 void MainWindow::initial_cards(){
     ui->own_card1->setPixmap(QPixmap("poker//behind.jpg"));
@@ -267,17 +276,29 @@ void MainWindow::initial_cards(){
     ui->card3->setPixmap(QPixmap("poker//behind.jpg"));
     ui->card4->setPixmap(QPixmap("poker//behind.jpg"));
     ui->card5->setPixmap(QPixmap("poker//behind.jpg"));
+    display_cards.append(ui->own_card1);
+    display_cards.append(ui->own_card2);
+    display_cards.append(ui->card1);
+    display_cards.append(ui->card2);
+    display_cards.append(ui->card3);
+    display_cards.append(ui->card4);
+    display_cards.append(ui->card5);
 }
 void MainWindow::initial_lineedit(){
     //disable lineedit data
     ui->money->setEnabled(false);
     ui->youxiweizhi->setEnabled(false);
-    ui->youxiweizhi->setEnabled(false);
-    ui->youxiweizhi->setEnabled(false);
-    ui->youxiweizhi->setEnabled(false);
-    ui->youxiweizhi->setEnabled(false);
-
+    ui->dichi->setEnabled(false);
+    ui->zuidizhu->setEnabled(false);
+    ui->xiazhuwanjia->setEnabled(false);
+    ui->xiazhuwanjiaweizhi->setEnabled(false);
+    ui->xuyaogengzhujine->setEnabled(false);
+    ui->yijingxiazhujine->setEnabled(false);
+    QIntValidator *t=new QIntValidator();
+    ui->total_money->setValidator(t);
     connect(ui->name,&QLineEdit::editingFinished,this,&MainWindow::change_name);
+    ui->total_money->setText("0");
+    Connect_Bet();
 }
 MainWindow::~MainWindow()
 {

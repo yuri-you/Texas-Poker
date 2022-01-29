@@ -20,13 +20,17 @@ public:
 struct player_information{
     int position;
     int state;
+    /*
+     0 待行动
+     1 行动中
+     2 盖牌
+     3 出局
+    */
     int id;
-    //0 待行动
-    //1 盖牌
     int all_money;
-    int input_money;
+    int input_money=0;
     player_information(){}
-    player_information(int pos,int _id){position=pos;id=_id;}
+    player_information(int pos,int _id){position=pos;id=_id;state=0;}
 };
 
 private:
@@ -36,13 +40,18 @@ private:
     QTextCodec *decoder;
     QMap<QString,int> players;
     QString selfname;
-
-
+    QVector<QLabel*> display_cards;
+    int alive_player=0;
     QMap<QString,player_information> game_player;
+
 
 signals:
     void close();
 private:
+    //connect link
+    void Connect_Bet();
+    void Disconnect_Bet();
+
     //tcps
     void write_buffer(QString x);
     void closeEvent(QCloseEvent *e);
@@ -70,5 +79,16 @@ private:
     void Open_Communication();
     void Send_Message();
     void Clear_Message();
+    void Activate(QString name);
+    void Bet();
+    void Fold();
+    void All_In();
+    void Check();
+    void Iteration_Start();
+    void Change_Bet();
+    void Input_Bet();
+    void Reset_Bet();
+    bool Bet_Legal(int a);
+    void Enable_Bet(bool signal);
 };
 #endif // MAINWINDOW_H
