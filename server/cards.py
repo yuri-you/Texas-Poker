@@ -19,8 +19,10 @@ def establish_cards():
 def allocate_cards(cards,Players):
     for player in Players:
         write(Players[player]["TcpSocket"],"Receive card,0,"+cards[-1])
+        Players[player]["Information"]["Cards"].append(cards[-1])
         cards.pop()
         write(Players[player]["TcpSocket"],"Receive card,1,"+cards[-1])
+        Players[player]["Information"]["Cards"].append(cards[-1])
         cards.pop()
 def allocate_cards_same(cards,Players,lists):
     ready_card=[]
@@ -29,4 +31,5 @@ def allocate_cards_same(cards,Players,lists):
         cards.pop()
     for player in Players:
         for j in range(len(lists)):
+            Players[player]["Information"]["Cards"].append(ready_card[j])
             write(Players[player]["TcpSocket"],"Receive card,%d,%s"%(lists[j],ready_card[j]))

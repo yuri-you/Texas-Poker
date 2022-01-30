@@ -8,9 +8,10 @@ def write(socket,string):
 def check_ready(Players,Information):
     time.sleep(1)
     for player in Players:
-        if Players[player]["information"]["Ready"]==False:
+        if Players[player]["Information"]["Ready"]==False:
             # print(player+"ip=%s,port=%d"%(Players[player]["Addr"]))
             return False
     if Information["Ready"]==False:
+        # print("Information Unready")
         return False
     return True

@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 void MainWindow::Begin_Game(){
     QMessageBox::information(this,"Information!","游戏开始!",QMessageBox::Yes);
+    ui->port->setEnabled(false);
+    ui->ip->setEnabled(false);
     write_buffer("Receive Game Start");
     ui->jiarufangjian->setEnabled(false);
     ui->tuichufangjian->setEnabled(false);
@@ -20,10 +22,18 @@ void MainWindow::Iteration_Start(){
     if(game_player[selfname].position==1)youxiweizhi+="(BB)";
     if(game_player[selfname].position==alive_player-1)youxiweizhi+="(庄)";
     ui->youxiweizhi->setText(youxiweizhi);
+    Reset_Bet();
+    Reset_Card();
+    Reset_Information();
+}
+void MainWindow::Reset_Information(){
     ui->dichi->setText(QString("%1").arg(0));
     ui->zuidizhu->setText(QString("%1").arg(0));
     ui->yijingxiazhujine->setText(QString("%1").arg(0));
     ui->xuyaogengzhujine->setText(QString("%1").arg(0));
+    for(QString x:game_player.keys()){
+        game_player[x].input_money=0;
+    }
 }
 void MainWindow::Clear_Message(){
     ui->output->clear();
@@ -47,14 +57,14 @@ void MainWindow::Send_Message(){
     if(ui->shoujianren->currentText()=="全体成员"){
         for(QString shoujianren:game_player.keys()){
             if(shoujianren!=selfname){
-                write_buffer(QString("Information,%1,%3:%2").arg(shoujianren).arg(text).arg(shoujianren));
-                ui->output->addItem(QString("<全体消息>%1(我):%2").arg(selfname).arg(text));
+                write_buffer(QString("Information,%1,<全体消息>%3:%2").arg(shoujianren).arg(text).arg(selfname));
             }
         }
+        ui->output->addItem(QString("<全体消息>%1(我):%2").arg(selfname).arg(text));
     }
     else{
         write_buffer(QString("Information,%1,%3:%2").arg(ui->shoujianren->currentText()).arg(text).arg(selfname));
-        ui->output->addItem(QString("%1(我):%2").arg(selfname).arg(text));
+        ui->output->addItem(QString("%1(我)->%3:%2").arg(selfname).arg(text).arg(ui->shoujianren->currentText()));
     }
     ui->fasongneirong->clear();
 }
@@ -81,10 +91,12 @@ void MainWindow::Receive_Game_Instruction(QStringList datas){
     }
     else if(datas[0]=="Initial Position"){
         game_player[datas[1]].position=datas[2].toInt();
+        game_player[datas[1]].state=0;
     }
     else if(datas[0]=="Initial Position Finish"){
         //开始一轮游戏
         Iteration_Start();
+        Enable_Bet(false);
         Show_State();
     }
 
@@ -97,6 +109,7 @@ void MainWindow::Receive_Game_Instruction(QStringList datas){
     else if(datas[0]=="Someone Bet"){
         int money=datas[2].toInt();
         game_player[datas[1]].input_money+=money;
+        game_player[datas[1]].all_money-=money;
         int dichi=ui->dichi->text().toInt()+money;
         ui->dichi->setText(QString("%1").arg(dichi));
         ui->zuidizhu->setText(QString("%1").arg(game_player[datas[1]].input_money));
@@ -105,8 +118,18 @@ void MainWindow::Receive_Game_Instruction(QStringList datas){
             int yijingxiazhu=ui->yijingxiazhujine->text().toInt()+money;
             ui->yijingxiazhujine->setText(QString("%1").arg(yijingxiazhu));
         }
+        game_player[datas[1]].state=0;
         Show_State();
         write_buffer("Accepted");
+    }
+    else if(datas[0]=="Someone Fold"){
+        game_player[datas[1]].state=2;
+        Show_State();
+        write_buffer("Accepted");
+    }
+    else if(datas[0]=="Add Money"){
+        game_player[datas[1]].all_money+=datas[2].toInt();
+        if(selfname==datas[1])ui->money->setText(QString("%1").arg(ui->money->text().toInt()+datas[2].toInt()));
     }
 }
 void MainWindow::Activate(QString name){
@@ -204,7 +227,7 @@ bool MainWindow::Bet_Legal(int a){
         QMessageBox::warning(this,"Warning","金额不足，如果需要请All in!",QMessageBox::Yes);
         return false;
     }
-    int min_money=ui->zuidizhu->text().toInt();
+    int min_money=ui->xuyaogengzhujine->text().toInt();
     if(min_money>a){
         ui->total_money->setText(ui->zuidizhu->text());
         QMessageBox::warning(this,"Warning",QString("至少下注%1,如果不足请All in!").arg(min_money),QMessageBox::Yes);
@@ -219,11 +242,22 @@ void MainWindow::Bet(){
         if(signal==QMessageBox::No)return;
         write_buffer(QString("Bet,%1").arg(total_money));
         Enable_Bet(false);
+        int remain_money=ui->money->text().toInt()-total_money;
+        ui->money->setText(QString("%1").arg(remain_money));
     }
 }
 void MainWindow::Fold(){
+    write_buffer("Fold");
+    Enable_Bet(false);
 }
 void MainWindow::Check(){
+    int total_money=0;
+    if(Bet_Legal(total_money)){
+        QMessageBox::StandardButton signal=QMessageBox::question(this, "确认", QString("将过牌,确认吗"), QMessageBox::Yes|QMessageBox::No);
+        if(signal==QMessageBox::No)return;
+        write_buffer(QString("Bet,%1").arg(total_money));
+        Enable_Bet(false);
+    }
 }
 void MainWindow::All_In(){
 

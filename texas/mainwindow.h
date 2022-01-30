@@ -90,5 +90,7 @@ private:
     void Reset_Bet();
     bool Bet_Legal(int a);
     void Enable_Bet(bool signal);
+    void Reset_Card();
+    void Reset_Information();
 };
 #endif // MAINWINDOW_H

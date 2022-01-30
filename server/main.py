@@ -39,10 +39,10 @@ def main():
     Information["起始底注"]=10
     count=0
     for user in Players:
-            Players[user]["information"]=dict()
-            Players[user]["information"]["money"]=Information["起始金额"]
-            Players[user]["information"]["Start"]=False
-            Players[user]["information"]["id"]=count
+            Players[user]["Information"]=dict()
+            Players[user]["Information"]["Money"]=Information["起始金额"]
+            Players[user]["Information"]["Start"]=False
+            Players[user]["Information"]["Id"]=count
             new_thread=PlayerThread(user,Players,Information)
             Players[user]["Thread"]=new_thread
             new_thread.daemon=True
@@ -63,62 +63,76 @@ def main():
         while is_start:
             is_start=False
             for player in Players:
-                if not Players[player]["information"]["Start"]:
+                if not Players[player]["Information"]["Start"]:
                     is_start=True
                     break
         start_game(Players)
         # iterations=0
         #each game
-        Information["iteration"]=0
-        Information["alive_player"]=len(Players)
+        Information["Iteration"]=0
+        Information["Alive player"]=len(Players)
+        for player in Players:
+            Players[player]["Information"]["Cards"]=list()
         while True:
             begin_iteration(Players,Information)
             cards=establish_cards()
             allocate_cards(cards,Players)
             Information["Ready"]=True
-            Information["game_time"]=0 #现在进行到了第几轮，比如0是翻前。1是flop,2是
-            Information["now_player"]=2
-            Information["begin_bet"]=False
-            # Information["max_bet"]=0
-            Information["not_fold"]=Information["alive_player"]
+            Information["Game time"]=0 #现在进行到了第几轮，比如0是翻前。1是flop,2是
+            Information["Now player"]=2
+            Information["Begin bet"]=0#0进入这一轮之前 1第一轮下注  2都加过注
+            Information["Max bet"]=0
+            Information["Not fold"]=Information["Alive player"]
+            Information["Dichi"]=0
+            Players[player]["Information"]["Cards"].clear()
             while True:
-                if Information["not_fold"]==1 or Information["game_time"]==4:
+                if Information["Not fold"]==1 or Information["Game time"]==4:
                     break   #全部弃牌或者开牌
-                if Information["game_time"]==0:#翻前
-                    if Information["now_player"]==2:#轮到枪口位
-                        if Information["begin_bet"]:#都加过注
+                print(Information["Not fold"])
+                if Information["Game time"]==0:#翻前
+                    if Information["Now player"]==2:#轮到枪口位
+                        if Information["Begin bet"]:#都加过注
                             continue_allocate=True
                             Bet_Money=[]
                             for player in Players:
-                                if Players[player]["information"]["alive"] and not Players[player]["information"]["fold"]:
-                                    Bet_Money.append(Players[player]["information"]["add_money"])
+                                if Players[player]["Information"]["Alive"] and not Players[player]["Information"]["Fold"]:
+                                    Bet_Money.append(Players[player]["Information"]["Add money"])
+                            # print(Bet_Money)
                             if len(set(Bet_Money))==1:#进到下一轮 
                                 enter_next_iteration(Players,Information,cards)
-                                #自动开牌bug
-                                #盲注问题
-                                #有人升注但自己不能再加
-                                
+                                Information["Now player"]=0
+                                #盲注问题                                
                                 continue
-                        else:
-                            Information["begin_bet"]=True
-                elif Information["game_time"]>0:#翻牌后
-                    if Information["now_player"]==0:#轮到小盲
-                        if Information["begin_bet"]:#都加过注
+                        Information["Begin bet"]+=1
+                elif Information["Game time"]>0:#翻牌后
+                    if Information["Now player"]==0:#轮到小盲
+                        if Information["Begin bet"]:#都加过注
                             continue_allocate=True
+                            Bet_Money=[]
                             for player in Players:
-                                if Players[player]["information"]["alive"] and not Players[player]["information"]["fold"]:
-                                    if Players[player]["information"]["add_money"]!=Information["max_bet"]:
-                                        continue_allocate=False
-                                        break
-                            if continue_allocate: 
+                                if Players[player]["Information"]["Alive"] and not Players[player]["Information"]["Fold"]:
+                                    Bet_Money.append(Players[player]["Information"]["Add money"])
+                            # print(Bet_Money)
+                            if len(set(Bet_Money))==1:#进到下一轮 
                                 enter_next_iteration(Players,Information,cards)
+                                #盲注问题                                
                                 continue
-                        else:
-                            Information["begin_bet"]=True
+                        Information["Begin bet"]+=1
+
                 if activate(Players,Information):
+                    # print("activate successfully")
                     while not check_ready(Players,Information):
                         pass
-                Information["now_player"]=(Information["now_player"]+1)%len(Players)
+                # print(Information["now_player"])
+                Information["Now player"]=(Information["Now player"]+1)%len(Players)
+                time.sleep(0.1)
+            if Information["Not fold"]==1:
+                for player in Players:
+                    if not Players[player]["Information"]["Fold"]:
+                        break
+                for key in Players:
+                    write(Players[key]["TcpSocket"],"Add Money,%s,%d"%(player,Information["Dichi"]))
+                
                 # while True:
                 #     pass
             # activate(user)

@@ -112,9 +112,6 @@ void MainWindow::tcp_connect(){
         socket->disconnectFromHost();
     }
     socket->connectToHost(ip,port);
-    ui->tuichufangjian->setEnabled(true);
-    ui->jiarufangjian->setEnabled(false);
-    ui->zhunbei->setEnabled(true);
 }
 void MainWindow::tcp_disconnect(){
     if(socket->isValid()){
@@ -187,6 +184,9 @@ void MainWindow::readAll(QString data){
     if(datas[0]=="Connect Successfully"){
         tcpisconnect=true;
         QMessageBox::information(this,"Information!","成功加入房间",QMessageBox::Yes);
+        ui->tuichufangjian->setEnabled(true);
+        ui->jiarufangjian->setEnabled(false);
+        ui->zhunbei->setEnabled(true);
         write_buffer(ui->name->text());
     }
     else if(datas[0]=="Name Repeat"){
@@ -269,13 +269,7 @@ void MainWindow::initial(){
     Enable_Bet(false);
 }
 void MainWindow::initial_cards(){
-    ui->own_card1->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->own_card2->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->card1->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->card2->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->card3->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->card4->setPixmap(QPixmap("poker//behind.jpg"));
-    ui->card5->setPixmap(QPixmap("poker//behind.jpg"));
+    Reset_Card();
     display_cards.append(ui->own_card1);
     display_cards.append(ui->own_card2);
     display_cards.append(ui->card1);
@@ -299,6 +293,15 @@ void MainWindow::initial_lineedit(){
     connect(ui->name,&QLineEdit::editingFinished,this,&MainWindow::change_name);
     ui->total_money->setText("0");
     Connect_Bet();
+}
+void MainWindow::Reset_Card(){
+    ui->own_card1->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->own_card2->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->card1->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->card2->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->card3->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->card4->setPixmap(QPixmap("poker//behind.jpg"));
+    ui->card5->setPixmap(QPixmap("poker//behind.jpg"));
 }
 MainWindow::~MainWindow()
 {
